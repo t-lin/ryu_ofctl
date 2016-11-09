@@ -91,7 +91,7 @@ def insertFlow(dpid, flowEntry):
             LOG.debug("%s ERROR: Unimplemented actions", self.__class__.__name__)
 
     match = _getMatchDict(flowEntry)
-    body = {"dpid": dpid, "actions": actions, "match": match}
+    body = {"dpid": dpid, "priority": 40000, "actions": actions, "match": match}
 
     #LOG.debug("ADDING FLOW dpid = %s, in_port = %s, src = %s, dst = %s, actions = %s",
     #            (dpid), flow.in_port, flow.dl_src, flow.dl_dst, actions)

@@ -1,12 +1,15 @@
 Pythonic interface for basic ovs-ofctl commands
+Currently, match fields support L1 port and L2 src & dst
+
 Example workflow:
-    The equivalent of 'ovs-ofctl add-flow s1 in_port=1,actions=output:2'
+    The equivalent of 'ovs-ofctl add-flow s1 in_port=1,dl_dst=00:00:00:00:00:03,actions=output:2'
     Assume switch 's1' has datapath ID of 0x1
     >>> import ryu-ofctl
     >>> flow = ryu-ofctl.FlowEntry()
     >>> act = ryu-ofctl.OutputAction(2)
     >>>
     >>> flow.in_port = 1
+    >>> flow.dl_dst = "00:00:00:00:00:03"
     >>> flow.addAction(act)
     >>>
     >>> dpid = 0x1
@@ -23,7 +26,7 @@ Example workflow:
     >>> ryu-ofctl.deleteFlow(dpid, flow)
 
 
-    The equivalent of 'ovs-ofctl del-flows s1'
+    The equivalent of 'ovs-ofctl del-flows s1' (flushing the flow table)
     >>> import ryu-ofctl
     >>>
     >>> dpid = 0x1
