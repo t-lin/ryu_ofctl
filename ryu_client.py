@@ -37,7 +37,8 @@ def _controllerAction(action, method, body=None):
                       httplib.CREATED,
                       httplib.ACCEPTED,
                       httplib.NO_CONTENT):
-        return res.status
+        return "Success!"
+        #return res.status
 
     raise httplib.HTTPException(
         res, 'code %d reason %s' % (res.status, res.reason),
@@ -77,7 +78,6 @@ def _getMatchDict(flow):
 
 # Insert a flow into a switch
 def insertFlow(dpid, flowEntry):
-    #LOG.debug("Ryu driver adding flow")
     #dpid = kwargs.get('dpid')
     #flow = kwargs.get('flow')
     assert type(dpid) in (int, long)
@@ -100,7 +100,6 @@ def insertFlow(dpid, flowEntry):
 
 # Delete flow(s) from a switch
 def deleteFlow(dpid, flowEntry):
-    #LOG.debug("Ryu driver deleting flow")
     #dpid = kwargs.get('dpid')
     #flow = kwargs.get('flow')
     assert type(dpid) in (int, long)

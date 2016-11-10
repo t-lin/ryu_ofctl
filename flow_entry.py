@@ -26,6 +26,10 @@ class OutputAction(FlowAction):
         assert type(out_port) is int
         self.out_port = out_port
 
+    def __str__(self):
+        return "OutputAction: %s" % self.out_port
+
+
 class FlowEntry(object):
     def __init__(self):
         # Initialize OF flow match's 12-tuple to all None (wildcards)
@@ -55,6 +59,10 @@ class FlowEntry(object):
 
     def getActions(self):
         return self.actions
+
+    def printActions(self):
+        for act in self.actions:
+            print act
 
     def isAllWild(self):
         allWild = not (self.in_port or self.dl_src or self.dl_dst)
