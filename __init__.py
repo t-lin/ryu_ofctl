@@ -36,13 +36,15 @@ Example workflow:
     >>> ryu-ofctl.deleteAllFlows(dpid)
 """
 
-from ryu_client import insertFlow, deleteFlow, deleteAllFlows
+from ryu_client import insertFlow, deleteFlow, deleteAllFlows,\
+                        listSwitches, listLinks, listSwitchLinks, getMacIngressPort
 from flow_entry import FlowEntry, OutputAction
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 __all__ = [
     'insertFlow', 'deleteFlow', 'deleteAllFlows',
+    'listSwitches', 'listLinks', 'listSwitchLinks', 'getMacIngressPort',
     'FlowEntry', 'OutputAction'
 ]
 
