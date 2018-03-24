@@ -73,41 +73,49 @@ def _getMatchDict(flow):
         match['dl_src'] = flow.dl_src
     if flow.dl_dst:
         match['dl_dst'] = flow.dl_dst
-    #if flow.dl_type:
-    #    match['dl_type'] = flow.dl_type
-    #if flow.dl_vlan:
-    #    match['dl_vlan'] = flow.dl_vlan
-    #if flow.dl_vlan_pcp:
-    #    match['dl_vlan_pcp'] = flow.dl_vlan_pcp
-    #if flow.nw_src:
-    #    match['nw_src'] = flow.nw_src
-    #if flow.nw_dst:
-    #    match['nw_dst'] = flow.nw_dst
-    #if flow.nw_proto:
-    #    match['nw_proto'] = flow.nw_proto
-    #if flow.nw_tos:
-    #    match['nw_tos'] = flow.nw_tos
-    #if flow.tp_src:
-    #    match['tp_src'] = flow.tp_src
-    #if flow.tp_dst:
-    #    match['tp_dst'] = flow.tp_dst
+    if flow.dl_type:
+        match['dl_type'] = flow.dl_type
+    if flow.dl_vlan:
+        match['dl_vlan'] = flow.dl_vlan
+    if flow.dl_vlan_pcp:
+        match['dl_vlan_pcp'] = flow.dl_vlan_pcp
+    if flow.nw_src:
+        match['nw_src'] = flow.nw_src
+    if flow.nw_dst:
+        match['nw_dst'] = flow.nw_dst
+    if flow.nw_proto:
+        match['nw_proto'] = flow.nw_proto
+    if flow.nw_tos:
+        match['nw_tos'] = flow.nw_tos
+    if flow.tp_src:
+        match['tp_src'] = flow.tp_src
+    if flow.tp_dst:
+        match['tp_dst'] = flow.tp_dst
 
     return match
 
 # Insert a flow into a switch
 def insertFlow(dpid, flowEntry):
-    assert type(dpid) in (int, long)
+    if type(dpid) not in (str, unicode):
+        raise TypeError("Expecting dpid parameter to be a hexadecimal of type string")
+
+    assert isinstance(flowEntry, FlowEntry)
     assert flowEntry.isAllWild() is False
+    assert flowEntry.validateMatch(),\
+        "If L4 fields are set, ensure protocol fields in L2-L3 are appropriately set"
 
     actions = []
     for act in flowEntry.getActions():
         if isinstance(act, OutputAction):
-            actions.append({"type": "OUTPUT", "port": act.out_port})
+            actions.append({"type": "OUTPUT", "port": act.param})
         else:
             LOG.debug("%s ERROR: Unimplemented actions", self.__class__.__name__)
 
+    # Convert dpid to integer for ofctl_rest APIs
     match = _getMatchDict(flowEntry)
-    body = {"dpid": dpid, "priority": 40000, "actions": actions, "match": match}
+    body = {"dpid": int(dpid, 16), "cookie": 0, "actions": actions, "match": match}
+    if flowEntry.priority is not None:
+        body['priority'] = flowEntry.priority
 
     #LOG.debug("ADDING FLOW dpid = %s, in_port = %s, src = %s, dst = %s, actions = %s",
     #            (dpid), flow.in_port, flow.dl_src, flow.dl_dst, actions)
@@ -116,14 +124,20 @@ def insertFlow(dpid, flowEntry):
     return status
 
 # Delete flow(s) from a switch
-# TODO: Update and change dpid to use hex strings
 def deleteFlow(dpid, flowEntry):
-    assert type(dpid) in (int, long)
+    if type(dpid) not in (str, unicode):
+        raise TypeError("Expecting dpid parameter to be a hexadecimal of type string")
+
     assert isinstance(flowEntry, FlowEntry)
+    assert flowEntry.validateMatch(),\
+        "If L4 fields are set, ensure protocol fields in L2-L3 are appropriately set"
+
+    # Convert dpid to integer for ofctl_rest APIs
+    dpid = int(dpid, 16)
 
     if flowEntry.isAllWild() and not flowEntry.out_port:
         # Delete all flows
-        #LOG.debug("Deleting all flows in switch %s", hex(dpid))
+        #LOG.debug("Deleting all flows in switch %s", dpid)
         status = _controllerAction(DEL_ALL_FLOWS_URL % dpid, 'DELETE')
     else:
         # Delete specific flows
@@ -140,14 +154,12 @@ def deleteAllFlows(dpid):
     return deleteFlow(dpid, FlowEntry())
 
 # Query all switches connected to the controller
-# Returns list of datapath IDs in integer format (TODO: Change this in future)
 def listSwitches():
     ret = json.loads(_controllerAction(GET_SWITCHES, 'GET'))
 
     # Un-unicode the strings to avoid confusion
     for idx, dpid in enumerate(ret):
-        ret[idx] = int(dpid, 16)
-        #ret[idx] = str(dpid)
+        ret[idx] = str(dpid)
 
     return {"dpids": ret}
 
@@ -159,37 +171,29 @@ def listSwitches():
 #                           ...
 #                       ]
 #           }
-# Displays datapath IDs in integer format (TODO: Change this in future)
 def listLinks():
     ret_links = {"links": []}
     links = json.loads(_controllerAction(GET_LINKS, 'GET'))
     links = links["items"]
     for link in links:
-        endpoint1 = {"dpid": int(link["dp1"], 16), "port": link["port1"]}
-        endpoint2 = {"dpid": int(link["dp2"], 16), "port": link["port2"]}
-        #endpoint1 = {"dpid": str(link["dp1"]), "port": link["port1"]}
-        #endpoint2 = {"dpid": str(link["dp2"]), "port": link["port2"]}
+        endpoint1 = {"dpid": str(link["dp1"]), "port": link["port1"]}
+        endpoint2 = {"dpid": str(link["dp2"]), "port": link["port2"]}
         ret_links["links"].append( {"endpoint1": endpoint1, "endpoint2": endpoint2} )
 
     return ret_links
 
 # Query links (switch to switch) given a dpid
 # Same return format as listLinks()
-# TODO: Update and change dpid parameter to use hex strings
-# Displays datapath IDs in integer format (TODO: Change this in future)
 def listSwitchLinks(dpid):
-    assert type(dpid) in (int, long)
-    #if type(dpid) not in (str, unicode):
-    #    raise TypeError("Expecting dpid parameter to be a hexadecimal of type string")
+    if type(dpid) not in (str, unicode):
+        raise TypeError("Expecting dpid parameter to be a hexadecimal of type string")
 
     ret_links = {"links": []}
     links = json.loads(_controllerAction(GET_SWITCH_LINKS % dpid, 'GET'))
     links = links["items"]
     for link in links:
-        endpoint1 = {"dpid": int(link["dp1"], 16), "port": link["port1"]}
-        endpoint2 = {"dpid": int(link["dp2"], 16), "port": link["port2"]}
-        #endpoint1 = {"dpid": str(link["dp1"]), "port": link["port1"]}
-        #endpoint2 = {"dpid": str(link["dp2"]), "port": link["port2"]}
+        endpoint1 = {"dpid": str(link["dp1"]), "port": link["port1"]}
+        endpoint2 = {"dpid": str(link["dp2"]), "port": link["port2"]}
         ret_links["links"].append( {"endpoint1": endpoint1, "endpoint2": endpoint2} )
 
     return ret_links
@@ -202,11 +206,11 @@ def getMacIngressPort(mac):
 
     ret_port = json.loads(_controllerAction(GET_MAC_INGRESS % mac, 'GET'))
 
-    # Un-unicode the keys to avoid confusion
+    # Un-unicode the keys and values to avoid confusion
     if ret_port:
         port = {}
         for key, val in ret_port.items():
-            port[str(key)] = val
+            port[str(key)] = str(val)
     else:
         port = None
 
