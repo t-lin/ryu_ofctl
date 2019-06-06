@@ -36,6 +36,7 @@ STATUS_SUCCESS = "Success!"
 def setRyuEndpoint(ip, port):
     assert type(ip) in (str, unicode)
     assert type(port) is int
+    global RYU_API_HOST, RYU_API_PORT
     RYU_API_HOST = ip
     RYU_API_PORT = port
 

@@ -37,7 +37,8 @@ Example workflow:
 """
 
 from ryu_client import insertFlow, deleteFlow, deleteAllFlows,\
-                        listSwitches, listLinks, listSwitchLinks, getMacIngressPort
+                        listSwitches, listLinks, listSwitchLinks,\
+                        getMacIngressPort, setRyuEndpoint
 from flow_entry import FlowEntry, OutputAction
 
 __version__ = '1.1.0'
@@ -45,7 +46,7 @@ __version__ = '1.1.0'
 __all__ = [
     'insertFlow', 'deleteFlow', 'deleteAllFlows',
     'listSwitches', 'listLinks', 'listSwitchLinks', 'getMacIngressPort',
-    'FlowEntry', 'OutputAction'
+    'FlowEntry', 'OutputAction', 'setRyuEndpoint'
 ]
 
 __author__ = 'Thomas Lin <t.lin@mail.utoronto.ca>'
